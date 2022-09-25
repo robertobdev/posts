@@ -5,7 +5,7 @@ import { ObjectID } from 'bson';
 import { ObjectId } from "mongodb";
 import React, { useRef, useState } from 'react';
 import { Comment, Coordinate, Post } from ".";
-import clientPromise from "../../lib/mongodb";
+import clientPromise from "../lib/mongodb";
 interface PostProps {
   post: Post;
 }

@@ -1,251 +1,241 @@
-import { InferGetServerSidePropsType } from 'next';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { Button, Dialog, DialogActions, DialogTitle, IconButton, TextField } from "@mui/material";
 import Head from 'next/head';
-import clientPromise from '../lib/mongodb';
+import Link from "next/link";
+import { useState } from "react";
 
-export async function getServerSideProps(context: any) {
-  try {
-    await clientPromise;
-    // `await clientPromise` will use the default database passed in the MONGODB_URI
-    // However you can use another database (e.g. myDatabase) by replacing the `await clientPromise` with the following code:
-    //
-    // `const client = await clientPromise`
-    // `const db = client.db("myDatabase")`
-    //
-    // Then you can execute queries against your database like so:
-    // db.find({}) or any of the MongoDB Node Driver commands
-
-    return {
-      props: { isConnected: true },
-    };
-  } catch (e) {
-    console.error(e);
-    return {
-      props: { isConnected: false },
-    };
-  }
+interface PostProps {
+  posts: Post[];
 }
 
-export default function Home({
-  isConnected,
-}: InferGetServerSidePropsType<typeof getServerSideProps>) {
+export interface Post {
+  _id: string,
+  photo: string,
+  alt?: string,
+  comments: Comment[];
+}
+export interface Comment {
+  _id: string,
+  comment: string,
+  coordinate: Coordinate;
+}
+
+export interface Coordinate {
+  x: number,
+  y: number;
+}
+
+interface Card {
+  photo: string;
+  size: string;
+  url: string;
+  deletePost: any;
+}
+
+export default function Posts({ posts }: PostProps) {
+  const [postsState, setPostsState] = useState<Post[]>(posts);
+  const [imageUrl, setImageUrl] = useState('');
+  const [postUrl, setPostUrl] = useState('');
+
+  const saveComment = (e: any) => {
+    if (postUrl === '' || imageUrl === '') {
+      return;
+    }
+    const body = JSON.stringify({
+      url: postUrl,
+      photo: imageUrl,
+      comments: []
+    });
+    try {
+      fetch(`/api/posts`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body
+      }).then(res => res.json())
+        .then(json => {
+          setPostsState(json);
+          setImageUrl('');
+          setPostUrl('');
+        });
+
+    } catch (e) {
+      console.error(e);
+    }
+  };
+  const deletePost = (d: boolean, id: string) => {
+    if (!d) {
+      return;
+    }
+    try {
+      fetch(`/api/posts/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+      }).then(res => res.json())
+        .then(json => {
+          setPostsState(json);
+        });
+
+    } catch (e) {
+      console.error(e);
+    }
+  };
   return (
-    <div className="container">
+    <div>
       <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
+        <title>Post</title>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="initial-scale=1.0, width=device-width" />
       </Head>
+      <form style={{ ...styles.form }}>
+        <TextField size="small" required
+          InputLabelProps={{
+            shrink: true,
+          }}
+          value={imageUrl}
+          onChange={(event: any) => setImageUrl(event.target.value)}
+          id="standard-basic" label="Url da image" variant="standard" />
+        <TextField size="small"
+          InputLabelProps={{
+            shrink: true,
+          }}
+          required
+          value={postUrl}
+          onChange={(event: any) => setPostUrl(event.target.value)}
+          id="standard-basic" label="Url do pinterest" variant="standard" />
+        <Button type="button" onClick={(e) => saveComment(e)} style={{ ...styles.button }} size="small" variant="contained">Adicionar novo post</Button>
+      </form>
 
-      <main>
-        <h1 className="title">
-          Welcome to <a href="https://nextjs.org">Next.js with MongoDB!</a>
-        </h1>
-
-        {isConnected ? (
-          <h2 className="subtitle">You are connected to MongoDB</h2>
-        ) : (
-          <h2 className="subtitle">
-            You are NOT connected to MongoDB. Check the <code>README.md</code>{' '}
-            for instructions.
-          </h2>
-        )}
-
-        <p className="description">
-          Get started by editing <code>pages/index.js</code>
-        </p>
-
-        <div className="grid">
-          <a href="https://nextjs.org/docs" className="card">
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className="card">
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/canary/examples"
-            className="card"
-          >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="card"
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
-
-      <footer>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className="logo" />
-        </a>
-      </footer>
-
-      <style jsx>{`
-        .container {
-          min-height: 100vh;
-          padding: 0 0.5rem;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
-        }
-
-        main {
-          padding: 5rem 0;
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
-        }
-
-        footer {
-          width: 100%;
-          height: 100px;
-          border-top: 1px solid #eaeaea;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-        }
-
-        footer img {
-          margin-left: 0.5rem;
-        }
-
-        footer a {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-        }
-
-        a {
-          color: inherit;
-          text-decoration: none;
-        }
-
-        .title a {
-          color: #0070f3;
-          text-decoration: none;
-        }
-
-        .title a:hover,
-        .title a:focus,
-        .title a:active {
-          text-decoration: underline;
-        }
-
-        .title {
-          margin: 0;
-          line-height: 1.15;
-          font-size: 4rem;
-        }
-
-        .title,
-        .description {
-          text-align: center;
-        }
-
-        .subtitle {
-          font-size: 2rem;
-        }
-
-        .description {
-          line-height: 1.5;
-          font-size: 1.5rem;
-        }
-
-        code {
-          background: #fafafa;
-          border-radius: 5px;
-          padding: 0.75rem;
-          font-size: 1.1rem;
-          font-family: Menlo, Monaco, Lucida Console, Liberation Mono,
-            DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace;
-        }
-
-        .grid {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-wrap: wrap;
-
-          max-width: 800px;
-          margin-top: 3rem;
-        }
-
-        .card {
-          margin: 1rem;
-          flex-basis: 45%;
-          padding: 1.5rem;
-          text-align: left;
-          color: inherit;
-          text-decoration: none;
-          border: 1px solid #eaeaea;
-          border-radius: 10px;
-          transition: color 0.15s ease, border-color 0.15s ease;
-        }
-
-        .card:hover,
-        .card:focus,
-        .card:active {
-          color: #0070f3;
-          border-color: #0070f3;
-        }
-
-        .card h3 {
-          margin: 0 0 1rem 0;
-          font-size: 1.5rem;
-        }
-
-        .card p {
-          margin: 0;
-          font-size: 1.25rem;
-          line-height: 1.5;
-        }
-
-        .logo {
-          height: 1em;
-        }
-
-        @media (max-width: 600px) {
-          .grid {
-            width: 100%;
-            flex-direction: column;
-          }
-        }
-      `}</style>
-
-      <style jsx global>{`
-        html,
-        body {
-          padding: 0;
-          margin: 0;
-          font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto,
-            Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue,
-            sans-serif;
-        }
-
-        * {
-          box-sizing: border-box;
-        }
-      `}</style>
+      <div style={styles.pin_container}>
+        {postsState.map(({ _id, photo }) => {
+          return (
+            <Card deletePost={(d: boolean) => deletePost(d, _id)} size="small" key={_id} photo={photo} url={'/' + _id} />
+          );
+        })}
+      </div>
     </div>
   );
 }
+
+export async function getServerSideProps() {
+  try {
+    // const client = await clientPromise;
+    // const db = client.db("posts");
+
+    // const posts = await db
+    //   .collection("posts")
+    //   .find({})
+    //   .sort({ "_id": -1 })
+    //   .limit(20)
+    //   .toArray();
+    // return {
+    //   props: { posts: JSON.parse(JSON.stringify(posts)) },
+    // };
+    return {
+      props: { posts: JSON.parse("[]") },
+    };
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function Card({ size, url, photo, deletePost }: Card) {
+  const [open, setOpen] = useState(false);
+
+  const handleClickOpen = () => {
+    setOpen(true);
+  };
+
+  const handleClose = (hasDelete = false) => {
+    setOpen(false);
+    deletePost(hasDelete);
+  };
+
+  return (
+    <div style={{
+      ...styles.card,
+      ...styles[size]
+    }}>
+      <IconButton style={{ ...styles.buttonDelete }} onClick={handleClickOpen} aria-label="delete" size="small" color="error">
+        <DeleteIcon fontSize="inherit" />
+      </IconButton>
+      <Link href={url}>
+        <div>
+          <img height="250px" width="250px" src={photo} />
+        </div>
+      </Link>
+      <Dialog
+        open={open}
+        onClose={() => handleClose()}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">Deseja realmente excluir? </DialogTitle>
+        <DialogActions>
+          <Button onClick={() => handleClose()} color="primary">
+            Não
+          </Button>
+          <Button onClick={() => handleClose(true)} color="primary" autoFocus>
+            Sim
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </div>
+  );
+}
+
+const styles: any = {
+  pin_container: {
+    margin: '4em auto',
+    padding: 0,
+    width: '80vw',
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, 250px)',
+    gridAutoRows: '10px',
+    justifyContent: 'center',
+    columnGap: '10px'
+  },
+  card: {
+    margin: '15px 10px',
+    padding: 0,
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  small: {
+    gridRowEnd: 'span 26'
+  },
+  medium: {
+    gridRowEnd: 'span 33'
+  },
+  large: {
+    gridRowEnd: 'span 45'
+  },
+  img: {
+    borderRadius: '16px',
+  },
+  form: {
+    display: 'flex',
+    flexDirection: 'column',
+    backgroundColor: '#ffffff',
+    padding: '10px',
+    border: '1px solid gray',
+    borderRadius: '10px',
+    width: '50vw',
+    marginTop: '2em',
+    margin: '2em auto'
+  },
+  button: {
+    marginTop: '1em',
+  },
+  buttonDelete: {
+    position: 'absolute',
+    top: '-26px',
+    right: '-23px'
+  }
+};
+
