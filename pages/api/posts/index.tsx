@@ -5,10 +5,16 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
   try {
     const client = await clientPromise;
     const db = client.db("posts");
+    if (req.method === 'POST') {
+      await db
+        .collection("posts")
+        .insertOne(req.body);
+    }
+
     const posts = await db
       .collection("posts")
       .find({})
-      .sort({ metacritic: -1 })
+      .sort({ "_id": -1 })
       .limit(10)
       .toArray();
 

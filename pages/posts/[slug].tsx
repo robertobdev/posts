@@ -46,7 +46,7 @@ export default function Movies({ post }: PostProps) {
     const currentComments = comments.filter((commentItem: any) =>
       commentItem._id !== comment._id
     );
-    addCommentOnDb(comment);
+    addCommentOnDb(comment, true);
     setComments(currentComments);
   };
   function createNewMark(commentItem: Comment) {
@@ -73,8 +73,7 @@ export default function Movies({ post }: PostProps) {
       </HtmlTooltip>
     );
   }
-  const saveComment = (event: any) => {
-    event.preventDefault();
+  const saveComment = () => {
     const newComments: Comment = {
       _id: new ObjectID().toString(),
       comment: inputComment,
@@ -89,14 +88,15 @@ export default function Movies({ post }: PostProps) {
     setShowInput(false);
     return;
   };
-  async function addCommentOnDb(comment: Comment) {
+  async function addCommentOnDb(comment: Comment, remove = false) {
+    const bodyComment = { ...comment, remove };
     try {
       fetch(`/api/posts/${post._id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(comment)
+        body: JSON.stringify(bodyComment)
       });
     } catch (e) {
       console.error(e);
@@ -113,7 +113,7 @@ export default function Movies({ post }: PostProps) {
 
         <div ref={divEl}>
           {showInput ?
-            <form onSubmit={saveComment} style={{ ...styles.form }}>
+            <form onSubmit={() => saveComment()} style={{ ...styles.form }}>
               <TextField size="small"
                 InputLabelProps={{
                   shrink: true,
@@ -121,7 +121,7 @@ export default function Movies({ post }: PostProps) {
                 value={inputComment}
                 onChange={(event: any) => setInputComment(event.target.value)}
                 id="standard-basic" label="Comentário" variant="standard" />
-              <Button style={{ ...styles.button }} size="small" variant="contained">Adicionar</Button>
+              <Button type="submit" style={{ ...styles.button }} size="small" variant="contained">Adicionar</Button>
             </form> : <></>
           }
         </div>

@@ -16,7 +16,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
     if (req.method === 'PATCH') {
       const comment = req.body;
       let newComments = [...post?.comments];
-      if (comment?._id) {
+      if (comment?.remove) {
         newComments = newComments.filter((commentItem) => commentItem._id !== comment._id);
       } else {
         newComments.push(comment);
@@ -29,6 +29,22 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
           }
         });
       res.json({ message: 'Comments updated' });
+      return;
+    }
+
+    if (req.method === 'DELETE') {
+      await db
+        .collection("posts")
+        .deleteOne({ _id });
+
+      const posts = await db
+        .collection("posts")
+        .find({})
+        .sort({ "_id": -1 })
+        .limit(10)
+        .toArray();
+
+      res.json(posts);
       return;
     }
 
