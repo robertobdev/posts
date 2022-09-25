@@ -3,6 +3,7 @@ import { Button, Dialog, DialogActions, DialogTitle, IconButton, TextField } fro
 import Head from 'next/head';
 import Link from "next/link";
 import { useState } from "react";
+import clientPromise from "../lib/mongodb";
 
 interface PostProps {
   posts: Post[];
