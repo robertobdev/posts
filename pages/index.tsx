@@ -130,7 +130,7 @@ export async function getServerSideProps() {
       .collection("posts")
       .find({})
       .sort({ "_id": -1 })
-      .limit(20)
+      .limit(120)
       .toArray();
     return {
       props: { posts: JSON.parse(JSON.stringify(posts)) },

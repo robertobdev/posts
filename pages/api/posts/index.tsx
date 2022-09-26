@@ -15,7 +15,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
       .collection("posts")
       .find({})
       .sort({ "_id": -1 })
-      .limit(10)
+      .limit(110)
       .toArray();
 
     res.json(posts);
